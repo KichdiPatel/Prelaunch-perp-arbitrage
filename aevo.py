@@ -1,13 +1,8 @@
 import requests
 import json
-from decimal import Decimal
-import random
-import time
 import asyncio
-
 from loguru import logger
-
-from aevo_client import AevoClient
+from aevo_api.aevo_client import AevoClient
 
 
 class Aevo:
