@@ -5,17 +5,21 @@ import random
 import time
 import asyncio
 
+from loguru import logger
+
+from aevo_client import AevoClient
+
 
 class Aevo:
 
     def __init__(self, symbol):
-        self.address = "0xa22Bd4b5b230B2C47Dcae285d89892b574e99e9C"
-        self.api_key = "cXJUzUqZHinhuXVhKz8MZ18Xu6Rt86mJ"
+        self.address = "0x628041b0e653F6c5995A10DC47029EeB65575396"
+        self.api_key = "RtJUNks4N6Z8pZc5Jhcbu8P9YUWHfEwy"
         self.api_secret = (
-            "e453893d6fbed68b6c8068f0ba9953c0c2e9d4b63ae8867e03a9e326954b5931"
+            "107bf1fa85e3678ed95896f68fc2ba6a462c6b3aabdb2af82e80e3ba1c177748"
         )
         self.signing_key = (
-            "0xfe43590eb65560142f50b65f994c5c3372aded90de40995a1a3498a237616ca9"
+            "0x92c9fa2ee9916cd32af718d506e8dbe59b79d708a7a9ad16c1c05fba8dd3e947"
         )
         self.balance = 0
         self.positions = []
@@ -59,33 +63,25 @@ class Aevo:
     def get_positions(self):
         return self.positions
 
-    def trade(self, price, vol, direction):
-        url = "https://api.aevo.xyz/orders"
-        amt = Decimal(str(vol))
-        limit = Decimal(str(price))
+    async def trade(self, price, vol, direction):
+        aevo = AevoClient(
+            signing_key=self.signing_key,
+            wallet_address=self.address,
+            api_key=self.api_key,
+            api_secret=self.api_secret,
+            env="mainnet",
+        )
 
-        payload = {
-            "instrument": self.instrument_ID,
-            "maker": self.address,
-            "is_buy": direction == "+",
-            "amount": int(amt * (10**6)),
-            "limit_price": int(limit * (10**6)),
-            "salt": random.randint(10000000, 99999999),
-            "signature": self.signing_key,
-            "timestamp": str(int(time.time())),
-        }
-        print(payload)
-        headers = headers = {
-            "accept": "application/json",
-            "content-type": "application/json",
-            "AEVO-KEY": self.api_key,
-            "AEVO-SECRET": self.api_secret,
-        }
-
-        response = requests.post(url, json=payload, headers=headers)
-
-        print(response.text)
+        response = aevo.rest_create_order(
+            instrument_id=self.instrument_ID,
+            is_buy=direction == "+",
+            limit_price=price,
+            quantity=vol,
+            post_only=False,
+        )
+        logger.info(response)
 
 
-a = Aevo("W")
-a.trade(1.73, 2, "+")
+if __name__ == "__main__":
+    # a = Aevo("W")
+    # asyncio.run(a.trade(1.71, 13, "-"))
