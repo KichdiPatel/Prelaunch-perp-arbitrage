@@ -82,5 +82,17 @@ async def main():
     await trader.run()
 
 
-if __name__ == "__main__":
-    asyncio.run(main())
+import random
+
+min_val = 1  # Minimum value in the smallest unit considering 6 decimals
+max_val = 1000000  # Maximum value in the smallest unit considering 6 decimals
+
+# Generate a random integer in the specified range
+random_int = random.randint(min_val, max_val)
+
+# Convert this to a "6 decimals fixed number" in string format to simulate the human-readable format
+salt = "{:.6f}".format(int(random_int * 10**6))
+
+print(
+    salt
+)  # This will be a string, simulating a human-readable number with 6 decimal places
