@@ -1,0 +1,5 @@
+requests
+loguru
+web3
+websocket-client
+msgpack

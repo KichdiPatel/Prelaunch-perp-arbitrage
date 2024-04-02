@@ -11,7 +11,7 @@ from eth_hash.auto import keccak
 from loguru import logger
 from web3 import Web3
 
-from eip712_structs import Address, Boolean, EIP712Struct, Uint, Bytes, make_domain
+from .eip712_structs import Address, Boolean, EIP712Struct, Uint, Bytes, make_domain
 
 CONFIG = {
     "testnet": {
@@ -213,7 +213,7 @@ class AevoClient:
         data, order_id = self.create_order_rest_json(
             int(instrument_id), is_buy, limit_price, quantity, post_only
         )
-        logger.info(data)
+        # logger.info(data)
         req = self.client.post(
             f"{self.rest_url}/orders", json=data, headers=self.rest_headers
         )
@@ -445,6 +445,7 @@ class AevoClient:
             "reduce_only": reduce_only,
             "close_position": close_position,
             "timestamp": timestamp,
+            "time_in_force": "IOC",
         }
         if trigger and stop:
             payload["trigger"] = trigger
@@ -557,7 +558,7 @@ class AevoClient:
             instrument=instrument_id,
             timestamp=timestamp,
         )
-        logger.info(self.signing_domain)
+        # logger.info(self.signing_domain)
         domain = make_domain(**self.signing_domain)
         signable_bytes = keccak(order_struct.signable_bytes(domain=domain))
         return (

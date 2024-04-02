@@ -3,26 +3,27 @@ import json
 import asyncio
 from loguru import logger
 from aevo_api.aevo_client import AevoClient
+from helpers import alert
 
 
 class Aevo:
 
     def __init__(self, symbol):
-        self.address = "0x628041b0e653F6c5995A10DC47029EeB65575396"
-        self.api_key = "RtJUNks4N6Z8pZc5Jhcbu8P9YUWHfEwy"
-        self.api_secret = (
-            "107bf1fa85e3678ed95896f68fc2ba6a462c6b3aabdb2af82e80e3ba1c177748"
-        )
-        self.signing_key = (
-            "0x92c9fa2ee9916cd32af718d506e8dbe59b79d708a7a9ad16c1c05fba8dd3e947"
-        )
-        self.balance = 0
-        self.positions = []
-        self.symbol = symbol
-        self.instrument_ID = 0
-        self.get_account()
+        with open("config.json", "r") as f:
+            config = json.load(f)
 
-    def get_account(self):
+        self.symbol = symbol
+        self.address = config["aevo_address"]
+        self.api_key = config["aevo_api_key"]
+        self.api_secret = config["aevo_api_secret"]
+        self.signing_key = config["aevo_signing_key"]
+        self.instrument_ID = self.fetch_instrument_ID()
+
+        self.positions = []
+        self.balance = 0
+        self.update_acc()
+
+    def update_acc(self):
         url = "https://api.aevo.xyz/account"
 
         headers = {
@@ -32,17 +33,11 @@ class Aevo:
         }
 
         response = requests.get(url, headers=headers).json()
-
         # update positions
         self.positions = response["positions"]
 
         # update the balance
-        self.balance = float(response["equity"])
-
-        for pos in self.positions:
-            self.balance -= float(pos["amount"]) * float(pos["avg_entry_price"])
-
-        self.instrument_ID = self.fetch_instrument_ID()
+        self.balance = response["collaterals"][0]["available_balance"]
 
     def fetch_instrument_ID(self):
         url = f"https://api.aevo.xyz/instrument/{self.symbol}-PERP"
@@ -59,6 +54,7 @@ class Aevo:
         return self.positions
 
     async def trade(self, price, vol, direction):
+        print(price, vol, direction)
         aevo = AevoClient(
             signing_key=self.signing_key,
             wallet_address=self.address,
@@ -74,9 +70,32 @@ class Aevo:
             quantity=vol,
             post_only=False,
         )
-        logger.info(response)
+        # logger.info(response)
+        if "error" not in response:
+            alert(f"MADE AEVO SIDE TRADE \n {response}")
+
+        print(response)
+        return "error" not in response
+
+    async def market_order(self, vol, direction):
+        aevo = AevoClient(
+            signing_key=self.signing_key,
+            wallet_address=self.address,
+            api_key=self.api_key,
+            api_secret=self.api_secret,
+            env="mainnet",
+        )
+
+        response = aevo.rest_create_market_order(
+            instrument_id=1, is_buy=direction == "+", quantity=vol
+        )
+
+        alert("AEVO MARKET ORDER - PLEASE REVIEW")
+        return response
 
 
-if __name__ == "__main__":
-    # a = Aevo("W")
-    # asyncio.run(a.trade(1.71, 13, "-"))
+# if __name__ == "__main__":
+#     a = Aevo("W")
+#     # n = (1.72, 71.965, "+")
+#     # asyncio.run(a.trade(*n))
+#     print(a.get_balance())
