@@ -5,9 +5,15 @@ from loguru import logger
 from aevo_api.aevo_client import AevoClient
 from helpers import alert
 
+"""
+Aevo Class that can be used to open and close trades, and get information about 
+the Aevo Account like balance, positions, etc. 
+"""
+
 
 class Aevo:
 
+    # Constructor
     def __init__(self, symbol):
         with open("config.json", "r") as f:
             config = json.load(f)
@@ -23,6 +29,7 @@ class Aevo:
         self.balance = 0
         self.update_acc()
 
+    # Checks the API and updates some of the instance variables
     def update_acc(self):
         url = "https://api.aevo.xyz/account"
 
@@ -39,6 +46,7 @@ class Aevo:
         # update the balance
         self.balance = response["collaterals"][0]["available_balance"]
 
+    # gets the instrument ID of a particular symbol
     def fetch_instrument_ID(self):
         url = f"https://api.aevo.xyz/instrument/{self.symbol}-PERP"
 
@@ -47,12 +55,16 @@ class Aevo:
         response = requests.get(url, headers=headers).json()
         return response["instrument_id"]
 
+    # getter for self.balance
     def get_balance(self):
-        return self.balance
+        return float(self.balance)
 
+    # getter for self.positions
     def get_positions(self):
         return self.positions
 
+    # opens a limit trade on aevo. "+" means long and "-" means short
+    # having an exact trade in the opposite direction can close a trade
     async def trade(self, price, vol, direction):
         print(price, vol, direction)
         aevo = AevoClient(
@@ -77,6 +89,8 @@ class Aevo:
         print(response)
         return "error" not in response
 
+    # opens a market trade on aevo. "+" means long and "-" means short
+    # having an exact trade in the opposite direction can close a trade
     async def market_order(self, vol, direction):
         aevo = AevoClient(
             signing_key=self.signing_key,

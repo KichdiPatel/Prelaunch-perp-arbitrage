@@ -8,9 +8,15 @@ from hyperliquid.utils import constants
 import asyncio
 from helpers import alert
 
+"""
+Hyperliquid Class that can be used to open and close trades, and get information about 
+the HL Account like balance, positions, etc. 
+"""
+
 
 class Hyperliquid:
 
+    # Constructor
     def __init__(self, symbol):
         with open("config.json", "r") as f:
             config = json.load(f)
@@ -29,6 +35,7 @@ class Hyperliquid:
         self.balance = 0
         self.update_acc()
 
+    # Checks the API and updates some of the instance variables
     def update_acc(self):
         url = "https://api.hyperliquid.xyz/info"
 
@@ -45,19 +52,23 @@ class Hyperliquid:
         # update positions
         self.positions = response["assetPositions"]
 
-        print(response["marginSummary"])
+        # print(response["marginSummary"])
 
         # update the balance
         self.balance = float(response["marginSummary"]["accountValue"]) - float(
             response["marginSummary"]["totalMarginUsed"]
         )
 
+    # getter for self.balance
     def get_balance(self):
-        return self.balance
+        return float(self.balance)
 
+    # getter for self.positions
     def get_positions(self):
         return self.positions
 
+    # opens a limit trade. "+" means long and "-" means short
+    # having an exact trade in the opposite direction can close a trade
     async def trade(self, price, vol, direction):
         order_result = self.exchange.order(
             self.symbol, direction == "+", vol, price, {"limit": {"tif": "Ioc"}}
@@ -70,6 +81,8 @@ class Hyperliquid:
 
         return "error" not in order_result["response"]["data"]["statuses"][0]
 
+    # opens a market trade. "+" means long and "-" means short
+    # having an exact trade in the opposite direction can close a trade
     async def market_trade(self, vol, direction):
         result = self.exchange.market_open("ETH", direction == "+", vol, None, 0.01)
         alert("HYPERLIQUID MARKET ORDER - PLEASE REVIEW")
